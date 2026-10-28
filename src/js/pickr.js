@@ -83,6 +83,10 @@ export default class Pickr {
     _lastColor = HSVaColor();
     _swatchColors = [];
 
+    // Color passed to setColor before initialization finished, undefined if none.
+    // The setup frame applies this one instead of the default color.
+    _initialColor = undefined;
+
     // Animation frame used for setup.
     // Will be cancelled in case of destruction.
     _setupAnimationFrame = null;
@@ -155,8 +159,8 @@ export default class Pickr {
                 return requestAnimationFrame(cb);
             }
 
-            // Apply default color
-            that.setColor(that._color?.toHSLA().toString() ?? opt.default);
+            // Apply default color, or the color set via setColor before initialization finished
+            that.setColor(that._initialColor === undefined ? opt.default : that._initialColor);
             that._rePositioningPicker();
 
             // Initialize color representation
@@ -829,6 +833,12 @@ export default class Pickr {
      * @param silent
      */
     setColor(string, silent = false) {
+
+        // Remember colors set before initialization finished, otherwise
+        // the setup frame would override them with the default color
+        if (this._initializingActive) {
+            this._initialColor = string;
+        }
 
         // Check if null
         if (string === null) {
